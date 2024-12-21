@@ -1,0 +1,262 @@
+#include <iostream>
+
+using namespace std;
+
+
+struct avl{
+    int valor;
+    avl *izq;
+    avl *der;
+    int altura;
+};
+avl *raiz,*aux,*nuevo;
+
+int obtenerAltura(avl *n){
+    if (n == NULL){
+        return 0;
+    }
+    return n->altura;
+}
+
+int mayor(int a, int b){
+    return (a > b) ? a : b;
+}
+
+int obtenerBalance(avl *n){
+    if (n == NULL) {
+        return 0;
+    }
+    return obtenerAltura(n->izq) - obtenerAltura(n->der);
+}
+
+avl *rotarDerecha(avl *y){
+    cout<<"rotando a la derecha"<<endl;
+    avl *x = y->izq;
+    avl *T2 = x->der;
+
+    x->der = y;
+    y->izq = T2;
+
+    y->altura = mayor(obtenerAltura(y->izq), obtenerAltura(y->der)) + 1;
+    x->altura = mayor(obtenerAltura(x->izq), obtenerAltura(x->der)) + 1;
+
+    return x;
+}
+
+avl *rotarIzquierda(avl *x){
+    cout<<"rotando a la izquierda"<<endl;
+    avl *y = x->der;
+    avl *T2 = y->izq;
+
+    y->izq = x;
+    x->der = T2;
+
+    x->altura = mayor(obtenerAltura(x->izq), obtenerAltura(x->der)) + 1;
+    y->altura = mayor(obtenerAltura(y->izq), obtenerAltura(y->der)) + 1;
+
+    return y;
+}
+
+avl *insertar(avl *nodo, avl *nuevo){
+    
+    if(nodo == NULL){
+        cout<<"insertando "<<nuevo->valor<<" al arbol"<<endl;
+        return nuevo;
+    }
+
+    if(nuevo->valor < nodo->valor){
+        cout<<"insertando "<<nuevo->valor<<" en subarbol izquierdo de "<<nodo->valor<<endl;
+        nodo->izq = insertar(nodo->izq,nuevo);
+    } else if(nuevo->valor > nodo->valor){
+        cout<<"insertando "<<nuevo->valor<<" en subarbol derecho de "<<nodo->valor<<endl;
+        nodo->der = insertar(nodo->der,nuevo);
+    } else{
+        cout<<"el valor "<<nuevo->valor<<" ya existe en el arbol"<<endl;
+        free(nuevo);
+        return nodo;
+    }
+
+    nodo->altura = 1 + mayor(obtenerAltura(nodo->izq), obtenerAltura(nodo->der));
+
+    int balance = obtenerBalance(nodo);
+
+    if(balance > 1 && nuevo->valor < nodo->izq->valor){
+        cout<<"desvalazamiento a la izquierda por el valor: "<<nuevo->valor<<" rotando a la derecha de:"<<nodo->valor<<endl;
+        return rotarDerecha(nodo);
+    }
+
+    if(balance < -1 && nuevo->valor > nodo->der->valor){
+        cout<<"desvalazamiento a la derecha por el valor: "<<nuevo->valor<<" rotando a la izquierda de:"<<nodo->valor<<endl;
+        return rotarIzquierda(nodo);
+    }
+
+    if(balance > 1 && nuevo->valor > nodo->izq->valor){
+        cout<<"desvalazamiento a la derecha por el valor: "<<nuevo->valor <<" rotacion doble a la izquierda y luego derecha"<<nodo->valor<<endl;
+        nodo->izq = rotarIzquierda(nodo->izq);
+        return rotarDerecha(nodo);
+    }
+
+    if(balance < -1 && nuevo->valor < nodo->der->valor){
+        cout<<"desvalazamiento a la izquierda por el valor: "<<nuevo->valor <<" rotacion doble a la derecha y luego izquierda"<<nodo->valor<<endl;
+        nodo->der = rotarDerecha(nodo->der);
+        return rotarIzquierda(nodo);
+    }
+
+    return nodo;
+}
+
+int registrar(){
+    nuevo = (struct avl*)malloc(sizeof(struct avl));
+    
+    cout<<"Ingrese el valor del nodo: ";
+    cin>>nuevo->valor;
+
+    nuevo->izq = nuevo->der = NULL;
+
+    nuevo->altura = 1;
+
+    raiz = insertar(raiz,nuevo);
+    return 0;
+}
+
+void mostrar(avl *arbol, int con){
+    if(arbol==NULL){
+        cout << "Error: arbol vacio" << endl;
+    }
+    else if(arbol != NULL){
+
+        if(arbol->der != NULL){
+            mostrar(arbol->der, con + 1);
+        }
+
+        for(int i = 0; i < con * 2; i++){
+            cout << " ";
+        }
+        cout << arbol->valor << endl;
+
+        if(arbol->izq != NULL){
+            mostrar(arbol->izq, con + 1);
+        }
+    }
+}
+
+avl *buscar(avl *auxi, int encontrar) {
+    if(auxi == NULL){
+        cout<<"No hay aviones registrados"<<endl;
+        return NULL;
+    }
+    if(auxi == NULL || auxi->valor == encontrar){
+        return auxi;
+    }
+    if(encontrar < auxi->valor){
+        return buscar(auxi->izq, encontrar);
+    } else if(encontrar > auxi->valor){
+        return buscar(auxi->der, encontrar);
+    }
+    
+    return NULL;
+}
+
+
+avl *minimo(avl *nodo){
+    avl *actual = nodo;
+    while(actual->izq != NULL){
+        cout<<"buscando el nodo mimimo en el subarbol izquierdo de "<<actual->valor<<endl;
+        actual = actual->izq;
+    }
+    return actual;
+}
+
+avl *eliminar(avl *raiz, int dato){
+    if(raiz == NULL){
+        cout<<"No se encontro"<<endl;
+        return raiz;
+    }
+
+    if(dato < raiz->valor){
+        cout<<"buscando en el subarbol izquierdo de "<<raiz->valor<<endl;
+        raiz->izq = eliminar(raiz->izq, dato);
+    }else if(dato > raiz->valor){
+        cout<<"buscando en el subarbol derecho de "<<raiz->valor<<endl;
+        raiz->der = eliminar(raiz->der, dato);
+    }else{
+        cout<<"nodo eliminado: "<<raiz->valor<<endl;
+        if(raiz->izq == NULL){
+            cout<<raiz->valor<<" sin hijo a la izquierda"<<endl;
+            avl *temp = raiz->der;
+            free(raiz);
+            return temp;
+        }else if(raiz->der == NULL){
+            cout<<raiz->valor<<" sin hijo a la derecha"<<endl;
+            avl *temp = raiz->izq;
+            free(raiz);
+            return temp;
+        }
+
+        avl *temp = minimo(raiz->der);
+
+        raiz->valor = temp->valor;
+
+        raiz->der = eliminar(raiz->der, temp->valor);
+    }
+
+    raiz->altura = 1 + mayor(obtenerAltura(raiz->izq), obtenerAltura(raiz->der));
+
+    int balance = obtenerBalance(raiz);
+
+    if(balance > 1 && obtenerBalance(raiz->izq) >= 0){
+        cout<<"desvalazamiento a la derecha por eliminar a el nodo:"<<raiz->valor<<" rotando a la izquierda de:"<<raiz->izq->valor <<endl;
+        return rotarDerecha(raiz);
+    }
+    if(balance > 1 && obtenerBalance(raiz->izq) < 0){
+        cout<<"desvalazamiento a la derecha por eliminar a el nodo:"<<raiz->valor<<" rotando doble a la izquierda y luego a la derecha"<<endl;
+        raiz->izq = rotarIzquierda(raiz->izq);
+        return rotarDerecha(raiz);
+    }
+    if(balance < -1 && obtenerBalance(raiz->der) <= 0){
+        cout<<"desvalazamiento a la izquierda por eliminar a el nodo:"<<raiz->valor<<" rotando a la izquierda de:"<<raiz->izq->valor <<endl;
+        return rotarIzquierda(raiz);
+    }
+    if(balance < -1 && obtenerBalance(raiz->der) > 0){
+        cout<<"desvalazamiento a la izquierda por eliminar a el nodo:"<<raiz->valor<<" rotando doble a la derecha y luego a la izquierda"<<raiz->der->valor<<endl;
+        raiz->der = rotarDerecha(raiz->der);
+        return rotarIzquierda(raiz);
+    }
+    return raiz;
+}
+
+int eliminarNodo(){
+    int dato;
+    cout<<"Ingrese el dato a eliminar: ";
+    cin >> dato;
+    raiz = eliminar(raiz, dato);
+    return 0;
+}
+
+
+void menu(){
+    int opcion = 0;
+
+    do{
+        cout<<"MENU"<<endl<<endl
+        <<"1. Insertar un nodo."<<endl
+        <<"2. Eliminar un nodo"<<endl
+        <<"3. Mostrar el arbol"<<endl
+        <<"4. Salir"<<endl<<endl
+        <<"opcion: ";
+        cin >> opcion;
+
+        switch (opcion){
+            case 1: registrar();break;
+            case 2: eliminarNodo(); break;
+            case 3: mostrar(raiz,0);break;
+            case 4:cout<<"adios"<<endl;break;
+            default:cout<<"ERROR: opcion no valida"<<endl;break;
+        }
+    }while(opcion != 4);
+}
+
+int main(){
+    menu();
+    return 0;
+}
